@@ -57,7 +57,7 @@ def load(context, path, callback):
             result.successful = True
             result.buffer = img.read()
             result.metadata.update(
-                size=img.lenght
+                size=img.length
             )
             
             print img.metadata
