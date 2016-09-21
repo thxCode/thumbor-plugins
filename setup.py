@@ -45,6 +45,7 @@ setup(
     install_requires=[
         'thumbor>=5.0.0',
         'pymongo',
+        'hiredis',
         'redis-py-cluster'
     ]
 )
