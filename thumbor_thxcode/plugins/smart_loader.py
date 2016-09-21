@@ -19,11 +19,11 @@ from . import mongo_upload_storage
 @return_future
 def load(context, path, callback):
 
-    def unquote_url(url) :
+    def __unquote_url(url) :
         return unquote(str(url)).decode('utf-8').encode('utf-8')
 
-    def normalize_url(url):
-        rurl = unquote_url(url)
+    def __normalize_url(url):
+        rurl = __unquote_url(url)
         if rurl.find('http') == 0 :
             if rurl.find('://') < 0 :
                 url = rurl.replace(':', ':/')
@@ -31,7 +31,7 @@ def load(context, path, callback):
             url = 'http://%s' % rurl
         return url
     
-    def callback_wrapper(result):
+    def __callback_wrapper(result):
         if result.successful:
             callback(result)
         else:
@@ -41,5 +41,5 @@ def load(context, path, callback):
     if path.find('scmongo_') == 0:
         mongo_upload_storage.get(context, path, callback)
     else:
-        http_loader.load(context, path, callback_wrapper, normalize_url)
+        http_loader.load(context, path, __callback_wrapper, __normalize_url)
 

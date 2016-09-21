@@ -9,6 +9,7 @@
 # Copyright (c) 2016 664647065@qq.com
 # Copyright (c) 2014 PopKey martin@popkey.co
 
+import hashlib
 import time
 from datetime import datetime, timedelta
 from rediscluster import StrictRedisCluster
@@ -23,6 +24,9 @@ class Storage(BaseStorage):
 
     client = None
     start_time = None
+    
+    def __unquote_url(url) :
+        return unquote(str(url)).decode('utf-8').encode('utf-8')
 
     def __init__(self, context):
         BaseStorage.__init__(self, context)
@@ -80,11 +84,13 @@ class Storage(BaseStorage):
     def __accept_webp(self):
         return (self.context.config.AUTO_WEBP and self.context.request.accepts_webp)
 
-    def __key_for(path):
+    def __key_for(self, url):
+        path = hashlib.md5(__unquote_url(url)).hexdigest()
+        
         if self.__accept_webp():
-            path = "thumbor-result-webp-%s" % path
+            path = 'thumbor-result-webp-%s' % path
         else:
-            path = "thumbor-result-%s" % path
+            path = 'thumbor-result-%s' % path
             
         return path
 
@@ -97,30 +103,30 @@ class Storage(BaseStorage):
 
     @on_exception(on_redis_error, RedisError)
     def put(self, path, bytes):
-        key = self.__key_for(path)
+        path = self.__key_for(path)
         result_ttl = self.__get_max_age()
 
         logger.debug("[REDIS_RESULT_STORAGE] put `{path}`".format(path=path))
 
         client = self.__get_client()
-        client.set(key, bytes)
+        client.set(path, bytes)
 
         if result_ttl > 0:
             client.expireat(
-                key,
+                path,
                 datetime.now() + timedelta(
                     seconds=result_ttl
                 )
             )
 
-        return key
+        return path
     
     @return_future
     def get(self, path, callback):
         @on_exception(self.on_redis_error, RedisError)
         def wrap(self, path):
-            key = self.__key_for(path)
-            result = self.__get_client().get(key)
+            path = self.__key_for(path)
+            result = self.__get_client().get(path)
         
             logger.debug("[REDIS_IMAGE_STORAGE] get `{path}`".format(path=path))
             return result if result else None
@@ -129,13 +135,13 @@ class Storage(BaseStorage):
 
     @on_exception(on_redis_error, RedisError)
     def last_updated(self, path):
-        key = self.__key_for(path)
+        path = self.__key_for(path)
         max_age = self.__get_max_age()
 
         if max_age == 0:
             return datetime.fromtimestamp(Storage.start_time)
 
-        ttl = self.__get_client().ttl(key)
+        ttl = self.__get_client().ttl(path)
 
         if ttl >= 0:
             return datetime.now() - timedelta(
