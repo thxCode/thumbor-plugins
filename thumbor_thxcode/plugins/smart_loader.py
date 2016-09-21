@@ -38,7 +38,7 @@ def load(context, path, callback):
             file_loader.load(context, path, callback)
     
     # MongoDB Upload Storage
-    if path.find('scmongo_') == 0:
+    if path.find('sc_mongo_') == 0:
         mongo_upload_storage.get(context, path, callback)
     else:
         http_loader.load(context, path, __callback_wrapper, __normalize_url)

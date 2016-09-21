@@ -65,7 +65,6 @@ class Storage(BaseStorage):
         database = self.__get_client()
 
         img_doc = {
-            'path': path,
             'create_at': datetime.now()
         }
 
@@ -74,12 +73,13 @@ class Storage(BaseStorage):
             if not self.context.server.security_key:
                 raise RuntimeError("STORES_CRYPTO_KEY_FOR_EACH_IMAGE can't be True if no SECURITY_KEY specified")
             img_doc_with_crypto['crypto'] = self.context.server.security_key
-
-        img_object_id = database.put(StringIO(bytes), **img_doc)
         
-        logger.debug("[MONGODB_UPLOAD_STORAGE] put `{path}`".format(path=path))
+        img_object_id = database.put(StringIO(bytes), **img_doc)
+        img_object_id = 'sc_mongo_' + str(img_object_id)
+        
+        logger.debug("[MONGODB_UPLOAD_STORAGE] put `{path}`".format(path=img_object_id))
 
-        return 'scmongo_' + str(img_object_id)
+        return img_object_id
     
     @return_future
     def exists(self, path, callback):
@@ -87,7 +87,7 @@ class Storage(BaseStorage):
         def _exists(self, path):
             database = self.__get_client()
             
-            result = database.exists(ObjectId(path[8:]))
+            result = database.exists(ObjectId(path[9:]))
     
             logger.debug("[MONGODB_UPLOAD_STORAGE] exists `{path}`".format(path=path))
         
@@ -101,7 +101,7 @@ class Storage(BaseStorage):
         def wrap(self, path):
             database = self.__get_client()
     
-            contents = database.get(ObjectId(path[8:])).read()
+            contents = database.get(ObjectId(path[9:])).read()
             
             logger.debug("[MONGODB_UPLOAD_STORAGE] get `{path}`".format(path=path))
     
@@ -117,7 +117,7 @@ class Storage(BaseStorage):
 
         database = self.__get_client()
 
-        database.delete(ObjectId(path[8:]))
+        database.delete(ObjectId(path[9:]))
         
         logger.debug("[MONGODB_UPLOAD_STORAGE] remove `{path}`".format(path=path))
         
