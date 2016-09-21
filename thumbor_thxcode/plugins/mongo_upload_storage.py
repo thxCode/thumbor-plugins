@@ -93,7 +93,7 @@ class Storage(BaseStorage):
         
             return False if not result else True
         
-        callback(wrap(self, path))
+        callback(_exists(self, path))
     
     @return_future
     def get(self, path, callback):

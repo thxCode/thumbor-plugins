@@ -148,7 +148,7 @@ class Storage(BaseStorage):
             
             return self.__get_client().exists(path)
         
-        callback(wrap(self, path))
+        callback(_exists(self, path))
 
     @on_exception(on_redis_error, RedisError)
     def remove(self, path):
