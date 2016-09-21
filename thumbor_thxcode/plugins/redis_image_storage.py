@@ -48,7 +48,7 @@ class Storage(BaseStorage):
             temp_servers = []
             for server in servers:
                 temp_server = servers[0].split(':')
-                temp_servers.append({host: temp_server[0], port: temp_server[1]})
+                temp_servers.append({'host': temp_server[0], 'port': temp_server[1]})
                 
             return StrictRedisCluster(startup_nodes=startup_nodes, decode_responses=True)
         else:
