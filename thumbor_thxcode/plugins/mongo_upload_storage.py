@@ -16,22 +16,47 @@ from cStringIO import StringIO
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import gridfs
+from gridfs.errors import FileExists,GridFSError
+from . import on_exception
 
 from thumbor.storages import BaseStorage
+from thumbor.utils import logger
 from tornado.concurrent import return_future
 
 
 class Storage(BaseStorage):
+    
+    client = None
 
-    def __conn__(self):
-        client = MongoClient(self.context.config.MONGODB_STORAGE_SERVERS)
-
-        database = client[self.context.config.MONGODB_STORAGE_DB]
+    def __init__(self, context):
+        BaseStorage.__init__(self, context)
+        
+        if not Storage.client:
+            Storage.client = self.__conn()
+        
+    def __conn(self):
+        return MongoClient(self.context.config.MONGODB_STORAGE_SERVERS)
+    
+    def __get_client(self):
+        if not Storage.client :
+            Storage.client = self.__conn()
+        
+        database = Storage.client[self.context.config.MONGODB_STORAGE_DB]
 
         return gridfs.GridFS(database)
+    
+    def on_mongo_error(self, fname, exc_type, exc_value):
+        if self.context.config.MONGODB_STORAGE_IGNORE_ERRORS is True:
+            logger.error("[MONGODB_UPLOAD_STORAGE] %s" % exc_value)
+            if fname == '_exists':
+                return False
+            return None
+        else:
+            raise exc_value
 
+    @on_exception(on_mongo_error, FileExists)
     def put(self, path, bytes):
-        database = self.__conn__()
+        database = self.__get_client()
 
         img_doc = {
             'path': path,
@@ -45,33 +70,48 @@ class Storage(BaseStorage):
             img_doc_with_crypto['crypto'] = self.context.server.security_key
 
         img_object_id = database.put(StringIO(bytes), **img_doc)
+        
+        logger.debug("[MONGODB_UPLOAD_STORAGE] put `{path}`".format(path=path))
 
         return 'scmongo_' + str(img_object_id)
     
     @return_future
     def exists(self, path, callback):
-        database = self.__conn__()
+        @on_exception(on_mongo_error, GridFSError)
+        def wrap(self, path):
+            database = self.__get_client()
+            
+            result = database.exists(ObjectId(path[8:]))
+    
+            logger.debug("[MONGODB_UPLOAD_STORAGE] exists `{path}`".format(path=path))
         
-        result = database.exists(ObjectId(path[8:]))
-
-        if not result :
-            callback(False)
-        else:
-            callback(True)
-
+            return False if not result else True
+        
+        callback(wrap(self, path))
+    
     @return_future
     def get(self, path, callback):
-        database = self.__conn__()
-
-        contents = database.get(ObjectId(path[8:])).read()
-
-        callback(contents)
+        @on_exception(self.on_mongo_error, GridFSError)
+        def wrap(self, path):
+            database = self.__get_client()
+    
+            contents = database.get(ObjectId(path[8:])).read()
+            
+            logger.debug("[MONGODB_UPLOAD_STORAGE] get `{path}`".format(path=path))
+    
+            return contents if contents else None
         
+        callback(wrap(self, path))
+    
+    
+    @on_exception(on_mongo_error, GridFSError)
     def remove(self, path):
         if not self.exists(path):
             return
 
-        database = self.__conn__()
+        database = self.__get_client()
 
-        img_fs.database(ObjectId(path[8:]))
+        database.delete(ObjectId(path[8:]))
+        
+        logger.debug("[MONGODB_UPLOAD_STORAGE] remove `{path}`".format(path=path))
         

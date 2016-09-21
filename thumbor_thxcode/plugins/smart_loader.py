@@ -10,17 +10,36 @@
 # Copyright (c) 2015 Thumbor-Community
 # Copyright (c) 2011 globo.com timehome@corp.globo.com
 
+from urllib2 import unquote
 from tornado.concurrent import return_future
-from thumbor.loaders import file_loader_http_fallback
+from thumbor.loaders import file_loader, http_loader
 from . import mongo_upload_storage
 
 
 @return_future
 def load(context, path, callback):
+
+    def unquote_url(url) :
+        return unquote(str(url)).decode('utf-8').encode('utf-8')
+
+    def normalize_url(url):
+        rurl = unquote_url(url)
+        if rurl.find('http') == 0 :
+            if rurl.find('://') < 0 :
+                url = rurl.replace(':', ':/')
+        else:
+            url = 'http://%s' % rurl
+        return url
+    
+    def callback_wrapper(result):
+        if result.successful:
+            callback(result)
+        else:
+            file_loader.load(context, path, callback)
     
     # MongoDB Upload Storage
-    if path.index('scmongo_') == 0:
+    if path.find('scmongo_') == 0:
         mongo_upload_storage.get(context, path, callback)
     else:
-        file_loader_http_fallback.load(context, path, callback)
+        http_loader.load(context, path, callback_wrapper, normalize_url)
 

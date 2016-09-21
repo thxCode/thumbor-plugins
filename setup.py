@@ -44,6 +44,7 @@ setup(
     ],
     install_requires=[
         'thumbor>=5.0.0',
-        'pymongo'
+        'pymongo',
+        'redis-py-cluster'
     ]
 )
