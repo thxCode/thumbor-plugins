@@ -17,6 +17,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 import gridfs
 from gridfs.errors import FileExists,GridFSError
+from pymongo.errors import AutoReconnect
 from . import on_exception
 
 from thumbor.storages import BaseStorage
@@ -41,7 +42,12 @@ class Storage(BaseStorage):
         if not Storage.client :
             Storage.client = self.__conn()
         
-        database = Storage.client[self.context.config.MONGODB_STORAGE_DB]
+        # reconnect
+        try:
+            database = Storage.client[self.context.config.MONGODB_STORAGE_DB]
+        except AutoReconnect as exc_value:
+            Storage.client = self.__conn()
+            database = Storage.client[self.context.config.MONGODB_STORAGE_DB]
 
         return gridfs.GridFS(database)
     
@@ -78,7 +84,7 @@ class Storage(BaseStorage):
     @return_future
     def exists(self, path, callback):
         @on_exception(on_mongo_error, GridFSError)
-        def wrap(self, path):
+        def _exists(self, path):
             database = self.__get_client()
             
             result = database.exists(ObjectId(path[8:]))

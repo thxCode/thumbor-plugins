@@ -143,7 +143,7 @@ class Storage(BaseStorage):
     @return_future
     def exists(self, path, callback):
         @on_exception(on_redis_error, RedisError)
-        def wrap(self, path):
+        def _exists(self, path):
             logger.debug("[REDIS_IMAGE_STORAGE] exists `{path}`".format(path=path))
             
             return self.__get_client().exists(path)
