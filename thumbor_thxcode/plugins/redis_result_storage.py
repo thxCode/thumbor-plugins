@@ -85,8 +85,8 @@ class Storage(BaseStorage):
     def __accept_webp(self):
         return (self.context.config.AUTO_WEBP and self.context.request.accepts_webp)
 
-    def __key_for(self, url):
-        path = hashlib.md5(Storage.__unquote_url(url)).hexdigest()
+    def __key_for(self, url, unquote_url=__unquote_url):
+        path = hashlib.md5(unquote_url(url)).hexdigest()
         
         if self.__accept_webp():
             path = 'thumbor-result-webp-%s' % path

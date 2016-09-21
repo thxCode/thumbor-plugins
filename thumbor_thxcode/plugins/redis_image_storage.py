@@ -25,7 +25,7 @@ class Storage(BaseStorage):
 
     client = None
 
-    def __unquote_url(url) :
+    def __unquote_url(url):
         return unquote(str(url)).decode('utf-8').encode('utf-8')
 
     def __init__(self, context):
@@ -79,14 +79,14 @@ class Storage(BaseStorage):
         else:
             raise exc_value
 
-    def __key_for(self, url):
-        return 'thumbor-%s' % hashlib.md5(Storage.__unquote_url(url)).hexdigest()
+    def __key_for(self, url, unquote_url=__unquote_url):
+        return 'thumbor-%s' % hashlib.md5(unquote_url(url)).hexdigest()
 
-    def __crypto_key_for(self, url):
-        return 'thumbor-crypto-%s' % hashlib.md5(Storage.__unquote_url(url)).hexdigest()
+    def __crypto_key_for(self, url, unquote_url=__unquote_url):
+        return 'thumbor-crypto-%s' % hashlib.md5(unquote_url(url)).hexdigest()
 
-    def __detector_key_for(self, url):
-        return 'thumbor-detector-%s' % hashlib.md5(Storage.__unquote_url(url)).hexdigest()
+    def __detector_key_for(self, url, unquote_url=__unquote_url):
+        return 'thumbor-detector-%s' % hashlib.md5(unquote_url(url)).hexdigest()
 
     @on_exception(on_redis_error, RedisError)
     def put(self, path, bytes):
