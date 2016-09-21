@@ -13,12 +13,11 @@
 from urllib2 import unquote
 from tornado.concurrent import return_future
 from thumbor.utils import logger
-from thumbor.loaders import file_loader, http_loader
+from thumbor.loaders import file_loader, http_loader, LoaderResult
 from pymongo import MongoClient
 from pymongo.errors import AutoReconnect
 from bson.objectid import ObjectId
 import gridfs
-from . import LoaderResult
 
 def __get_client(context):
     client = MongoClient(context.config.MONGODB_STORAGE_SERVERS)
