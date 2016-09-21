@@ -115,7 +115,7 @@ class Storage(BaseStorage):
 
     @return_future
     def get_crypto(self, path, callback):
-        @on_exception(on_redis_error, RedisError)
+        @on_exception(self.on_redis_error, RedisError)
         def wrap(self, path):
             if not self.context.config.STORES_CRYPTO_KEY_FOR_EACH_IMAGE:
                 return None
@@ -130,7 +130,7 @@ class Storage(BaseStorage):
 
     @return_future
     def get_detector_data(self, path, callback):
-        @on_exception(on_redis_error, RedisError)
+        @on_exception(self.on_redis_error, RedisError)
         def wrap(self, path):
             data = self.__get_client().get(self.__detector_key_for(path))
         
@@ -142,7 +142,7 @@ class Storage(BaseStorage):
 
     @return_future
     def exists(self, path, callback):
-        @on_exception(on_redis_error, RedisError)
+        @on_exception(self.on_redis_error, RedisError)
         def _exists(self, path):
             logger.debug("[REDIS_IMAGE_STORAGE] exists `{path}`".format(path=path))
             

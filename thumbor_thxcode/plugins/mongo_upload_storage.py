@@ -83,7 +83,7 @@ class Storage(BaseStorage):
     
     @return_future
     def exists(self, path, callback):
-        @on_exception(on_mongo_error, GridFSError)
+        @on_exception(self.on_mongo_error, GridFSError)
         def _exists(self, path):
             database = self.__get_client()
             
