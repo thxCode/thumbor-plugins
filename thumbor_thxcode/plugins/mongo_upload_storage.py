@@ -63,7 +63,10 @@ class Storage(BaseStorage):
     @on_exception(on_mongo_error, FileExists)
     def put(self, path, bytes):
         database = self.__get_client()
-
+        
+        if path.startswith('sc_mongo_'):
+            self.remove(path)
+            
         img_doc = {
             'create_at': datetime.now()
         }

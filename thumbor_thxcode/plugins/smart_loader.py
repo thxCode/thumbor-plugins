@@ -47,21 +47,19 @@ def load(context, path, callback):
             file_loader.load(context, path, callback)
     
     # MongoDB Upload Storage
-    if path.find('sc_mongo_') == 0:
+    if path.startswith('sc_mongo_'):
         result = LoaderResult()
         try:
             database = __get_client(context)
             img = database.get(ObjectId(path[9:]))
             
-            logger.debug("[SMART_LOADER_MONGO] get `{path}`".format(path=path))
             result.successful = True
             result.buffer = img.read()
             result.metadata.update(
                 size=img.length
             )
             
-            print img.metadata
-            
+            logger.debug("[SMART_LOADER_MONGO] get `{path}`".format(path=path))
         except Exception as exc_value:
             logger.error("[SMART_LOADER_MONGO] %s" % exc_value)
             result.successful = False
