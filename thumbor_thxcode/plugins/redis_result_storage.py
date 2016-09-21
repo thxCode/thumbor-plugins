@@ -11,7 +11,7 @@
 
 import time
 from datetime import datetime, timedelta
-from rediscluster import RedisCluster
+from rediscluster import StrictRedisCluster
 from redis import ConnectionPool,Redis,RedisError
 from . import on_exception
 from tornado.concurrent import return_future
