@@ -12,9 +12,19 @@
 
 from urllib2 import unquote
 from tornado.concurrent import return_future
+from thumbor.utils import logger
 from thumbor.loaders import file_loader, http_loader
-from . import mongo_upload_storage
+from pymongo import MongoClient
+from pymongo.errors import AutoReconnect
+from bson.objectid import ObjectId
+import gridfs
+from . import LoaderResult
 
+def __get_client(context):
+    client = MongoClient(context.config.MONGODB_STORAGE_SERVERS)
+    database = client[context.config.MONGODB_STORAGE_DB]
+    
+    return gridfs.GridFS(database)
 
 @return_future
 def load(context, path, callback):
@@ -39,7 +49,26 @@ def load(context, path, callback):
     
     # MongoDB Upload Storage
     if path.find('sc_mongo_') == 0:
-        mongo_upload_storage.get(context, path, callback)
+        result = LoaderResult()
+        try:
+            database = __get_client(context)
+            img = database.get(ObjectId(path[9:]))
+            
+            logger.debug("[SMART_LOADER_MONGO] get `{path}`".format(path=path))
+            result.successful = True
+            result.buffer = img.read()
+            result.metadata.update(
+                size=img.lenght
+            )
+            
+            print img.metadata
+            
+        except Exception as exc_value:
+            logger.error("[SMART_LOADER_MONGO] %s" % exc_value)
+            result.successful = False
+            result.error = "%s" % exc_value
+        
+        callback(result)
     else:
         http_loader.load(context, path, __callback_wrapper, __normalize_url)
 
