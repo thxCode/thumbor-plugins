@@ -115,9 +115,6 @@ class Storage(BaseStorage):
     
     @on_exception(on_mongo_error, GridFSError)
     def remove(self, path):
-        if not self.exists(path):
-            return
-
         database = self.__get_client()
 
         database.delete(ObjectId(path[9:]))

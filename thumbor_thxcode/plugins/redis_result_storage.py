@@ -103,7 +103,9 @@ class Storage(BaseStorage):
         return default_ttl
 
     @on_exception(on_redis_error, RedisError)
-    def put(self, path, bytes):
+    def put(self, bytes):
+        path = self.context.request.url
+        
         path = self.__key_for(path)
         result_ttl = self.__get_max_age()
 
@@ -123,7 +125,9 @@ class Storage(BaseStorage):
         return path
     
     @return_future
-    def get(self, path, callback):
+    def get(self, callback):
+        path = self.context.request.url
+        
         @on_exception(self.on_redis_error, RedisError)
         def wrap(self, path):
             path = self.__key_for(path)
@@ -135,7 +139,9 @@ class Storage(BaseStorage):
         callback(wrap(self, path))
 
     @on_exception(on_redis_error, RedisError)
-    def last_updated(self, path):
+    def last_updated(self):
+        path = self.context.request.url
+        
         path = self.__key_for(path)
         max_age = self.__get_max_age()
 
